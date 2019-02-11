@@ -205,10 +205,13 @@ app.layout = html.Div([
               html.Tr([
                 html.Td([html.Label("Альбедо подстилающей поверхности:", style={'display':'inline-block'})]),
                 html.Td([dcc.Input(id='groundAlbedo', type='number', style={'display':'inline-block'}, value=0.06, min=0.0, max=1.0)]),
-              ])
+              ]),
             ])
-          ])
-        ])
+          ]),
+          html.Hr(),
+          html.Div(id='direct-result'),
+          html.Button('Рассчитать', id='button-calc-direct'),
+        ]),
     ]),
     html.Div(id='tabs-content'),
 ])
@@ -298,6 +301,7 @@ def add_measurements_to_db(n_clicks, list_of_contents, meas_date, meas_time, lis
   State('phase-p5', 'value')],
   )
 def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrtype, p1, p2, p3, p4, p5):
+  # преобразуем строки в цклые числа
   distrtype=int(distrtype)
   modeltype=int(modeltype)
   if n_clicks!=None:
@@ -344,6 +348,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       return html.P("Запись о фазофой функции успешно добавлена в базу данных")
   pass
     
+
 @app.callback(Output('select-meas','options'),
               [Input('update-fields', 'n_clicks')],
               )
@@ -365,6 +370,69 @@ def update_phase_fields(n_clicks):
     for item in query:
       ret.append({'label':str(item), 'value':item.id})
   return ret
+
+@app.callback(Output('direct-result', 'children'),
+              [Input('button-calc-direct','n_clicks')],
+              [State('select-meas', 'value'),
+              State('select-phase', 'value'),
+              State('zenithAngle', 'value'),
+              State('aerosolOpticalDepth', 'value'),
+              State('groundAlbedo', 'value')])
+def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
+  if n_clicks is None:
+    return
+  ret = []
+  if meas_id is None:
+    ret.append(html.P('Не выбраны измерения'))
+  if phase_id is None:
+    ret.append(html.P('Не выбрана фазовая функция'))
+  if len(ret) > 0:
+    return ret
+  meas_id = int(meas_id)
+  phase_id = int(phase_id)
+  
+  meas_item = Measurements.select().where(Measurements.id==meas_id).get()
+  phase_item = PhaseFunction.select().where(PhaseFunction.id==phase_id).get()
+  
+  #проверяем, были ли такие расчеты
+  query = (DirectParameters.select().where((DirectParameters.measType==meas_item)&
+                                            (DirectParameters.phaseFunction==phase_item)&
+                                            (DirectParameters.zenithAngle==zenAng)&
+                                            (DirectParameters.aerosolOpticalDepth==aerDepth)&
+                                            (DirectParameters.groundAlbedo==grdAlb)))
+  if len(query)>0:
+    return html.P('Расчеты для данных параметров были выполнены ранее')
+  
+  F = np.load(phase_item.matrix)
+  EvA = F['EvA'][...]
+  ssa = F['ssa'][...]
+  F.close()
+  taum = AotRayleigh(phase_item.Wl)
+  mu = np.cos(np.deg2rad(zenAng))
+  transmittance = np.exp(-(taum+aerDepth)/mu)
+      
+  meas_data = np.load(meas_item.filepath)
+  Ameas = meas_data["data"][:,0]
+  Qmeas = meas_data["data"][:,1]
+  Imeas = meas_data["data"][:,2]
+  
+  meas_data.close()
+  EvA = EvA/EvA[0,0]
+  PrepareScatFile(EvA, aerDepth, ssa, phase_item.Wl)
+      
+  flux = 1.0/mu
+  rt3app = RtCode(solar_zenith=zenAng, direct_flux=flux,\
+          ground_albedo=grdAlb)
+  rt3app.run()
+  rt3app.I/=transmittance
+  rt3app.Q/=transmittance
+  np.savez('result.npz', Ang=rt3app.mu, I=rt3app.I, Q=rt3app.Q)
+  tmpF=open('result.npz', 'rb')
+    
+  direct_item = DirectParameters(measType=meas_item, phaseFunction=phase_id, zenithAngle=zenAng,
+    aerosolOpticalDepth=aerDepth, groundAlbedo=grdAlb)
+  direct_item.save()
+  print(meas_item, phase_id, zenAng, aerDepth, grdAlb)
 
 
 if __name__ == '__main__':

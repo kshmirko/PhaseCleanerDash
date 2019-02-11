@@ -15,7 +15,7 @@ class Measurements(Model):
     
 class PhaseFunction(Model):
   DISTRS = ((1, "Степенное"),
-            (3, "Логнормальное"),
+            (2, "Логнормальное"),
             (5, "Бимодальное логнормальное"),
           )
   MODEL_TYPE = ((1, "Сферы"),
@@ -44,6 +44,7 @@ class PhaseFunction(Model):
   
   def __str__(self):
     name=None
+    print(type(self.distrType))
     for it in self.DISTRS:
       if it[0]==self.distrType:
         name=it[1]
