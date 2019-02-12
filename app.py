@@ -159,7 +159,7 @@ app.layout = html.Div([
               html.Div(children=[
                 html.Label(["P",html.Sub("1"),":"], style={'display':'inline-block', 'width':'100pt'}),
                 dcc.Input(id="phase-p1", type="number", debounce=True, style={'display':'inline'}, 
-                  value=-4),
+                  value=-4, min=-10, max=-1.1, step=0.1),
                 ]),
                 html.Div(children=[
                   html.Label(["P",html.Sub("2"),":"], style={'display':'inline-block', 'width':'100pt'}),
@@ -205,7 +205,7 @@ app.layout = html.Div([
               ]),
               html.Tr([
                 html.Td([html.Label("Зенитный угол:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='zenithAngle', type='number', style={'display':'inline-block'}, value=65.0)]),
+                html.Td([dcc.Input(id='zenithAngle', type='number', style={'display':'inline-block'}, value=65.0, min=0, max=70, step=0.5)]),
               ]),
               html.Tr([
                 html.Td([html.Label("Аэрозольная отпическая толща:", style={'display':'inline-block'})]),
@@ -213,7 +213,7 @@ app.layout = html.Div([
               ]),
               html.Tr([
                 html.Td([html.Label("Альбедо подстилающей поверхности:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='groundAlbedo', type='number', style={'display':'inline-block'}, value=0.06, min=0.0, max=1.0)]),
+                html.Td([dcc.Input(id='groundAlbedo', type='number', style={'display':'inline-block'}, value=0.06, min=0.0, max=1.0, step=0.01)]),
               ]),
             ])
           ]),
