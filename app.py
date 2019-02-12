@@ -24,8 +24,12 @@ UPLOAD_TO = 'measurements/'
 UPLOAD_PHASES = 'phases/'
 DIRECT_PARAMS = 'direct_params/'
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+from flask import Flask
+flaskapp = Flask(__name__)
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+wsgi_app = flaskapp.wsgi_app
+
+app = dash.Dash(__name__, server=flaskapp, url_base_pathname='/', external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     dcc.Tabs(id="tabs", value='tab-meas', children=[
