@@ -544,7 +544,88 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
   direct_item = DirectParameters(measType=meas_item, phaseFunction=phase_id, zenithAngle=zenAng,
     aerosolOpticalDepth=aerDepth, groundAlbedo=grdAlb, filepath=filepath)
   direct_item.save()
-  print(meas_item, phase_id, zenAng, aerDepth, grdAlb)
+  #print(meas_item, phase_id, zenAng, aerDepth, grdAlb)
+  ret = [
+    html.Div([
+      dcc.Graph(id='ph-fun-i',
+        figure={
+          'data': 
+            [go.Scatter(
+              x=np.rad2deg(np.arccos(rt3app.mu)),
+              y=rt3app.I,
+              name=f'ID=Model',
+            ),
+            go.Scatter(
+              x=Ameas,
+              y=Imeas,
+              mode = 'lines+markers',
+              name='measurements'
+            )]
+          ,
+          'layout': go.Layout(
+            xaxis={'title':'cos(theta)'},
+            yaxis={'type':'log', 'title':'I-Intensity'},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0, 'y': 1},
+            hovermode='closest'
+          )
+        }
+      )
+    ], style={'width':'32%', 'display':'inline-block'}),
+    html.Div([
+      dcc.Graph(id='ph-fun-q',
+        figure={
+          'data': 
+            [go.Scatter(
+              x=np.rad2deg(np.arccos(rt3app.mu)),
+              y=rt3app.Q,
+              name=f'ID=Model',
+            ),
+            go.Scatter(
+              x=Ameas,
+              y=Qmeas,
+              mode = 'lines+markers',
+              name='measurements'
+            )]
+          ,
+          'layout': go.Layout(
+            xaxis={'title':'cos(theta)'},
+            yaxis={'title':'Q-Intensity'},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0, 'y': 1},
+            hovermode='closest'
+          )
+        }
+      )
+    ], style={'width':'32%', 'display':'inline-block'}),
+    html.Div([
+      dcc.Graph(id='ph-fun-Pol',
+        figure={
+          'data': 
+            [go.Scatter(
+              x=np.rad2deg(np.arccos(rt3app.mu)),
+              y=-rt3app.Q/rt3app.I*100,
+              name=f'ID=Model',
+            ),
+            go.Scatter(
+              x=Ameas,
+              y=-Qmeas/Imeas*100,
+              mode = 'lines+markers',
+              name='measurements'
+            )]
+          ,
+          'layout': go.Layout(
+            xaxis={'title':'cos(theta)'},
+            yaxis={'title':'DLP, %'},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            legend={'x': 0, 'y': 1},
+            hovermode='closest'
+          )
+        }
+      )
+    ], style={'width':'32%', 'display':'inline-block'}),
+  ]
+  return ret
 
 
 @app.callback(Output('select-disp-meas','options'),
@@ -592,13 +673,13 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
     idxs=[]
     for id in selected_rows:
       idx = int(data[id]['0'])
-      print(idx)
+      #print(idx)
       item = DirectParameters.get(DirectParameters.id==idx)
       F = np.load(item.filepath)
       Ang = F['Ang'][:]
       I = F['I'][:]
       Q = F['Q'][:]
-      print(Ang)
+      #print(Ang)
       F.close()
       tmpret.append([Ang, I, Q, idx])
       
