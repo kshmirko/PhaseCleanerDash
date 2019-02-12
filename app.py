@@ -4,9 +4,9 @@ import dash_html_components as html
 import dash_core_components as dcc
 from datetime import datetime as dt
 from datetime import date as dtt
-import dash_table
-import dash_bootstrap_components as dbc
-
+#import dash_bootstrap_components as dbc
+#import dash_table_experiments as dte
+import dash_table as dte
 
 from calc_module.distrtype import *
 from calc_module.mieutils import CalcScatteringProps1, MAX_DEG, MAX_LEG, AotRayleigh, PrepareScatFile
@@ -18,9 +18,11 @@ import base64
 import io
 import numpy as np
 from model import db_proxy, initialize, Measurements, PhaseFunction, DirectParameters
+import plotly.graph_objs as go
 
 UPLOAD_TO = 'measurements/'
 UPLOAD_PHASES = 'phases/'
+DIRECT_PARAMS = 'direct_params/'
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
@@ -175,7 +177,7 @@ app.layout = html.Div([
             ]),
             html.Hr(),
             html.Div(id='phase-result'),
-            html.Button('Рассчитать', id='button-calc-phase'),
+            html.Button('Рассчитать', id='button-calc-phase', style={'class':'btn btn-primary'}),
           ]),
         ]),
         dcc.Tab(label='3. Выполнение расчетов прямого моделирования', value='tab-direct-calc', children=[
@@ -200,7 +202,7 @@ app.layout = html.Div([
               ]),
               html.Tr([
                 html.Td([html.Label("Аэрозольная отпическая толща:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='aerosolOpticalDepth', type='number', style={'display':'inline-block'}, value=0.1, min=0.0, max=2.0)]),
+                html.Td([dcc.Input(id='aerosolOpticalDepth', type='number', style={'display':'inline-block'}, value=0.1, min=0.0, max=2.0, step=0.005)]),
               ]),
               html.Tr([
                 html.Td([html.Label("Альбедо подстилающей поверхности:", style={'display':'inline-block'})]),
@@ -211,6 +213,43 @@ app.layout = html.Div([
           html.Hr(),
           html.Div(id='direct-result'),
           html.Button('Рассчитать', id='button-calc-direct'),
+        ]),
+        dcc.Tab(label="4. Просмотр", value='tab-view-calc', children=[
+          html.Div([
+            html.H3('Просмотр результатов моделирования для выбранного натурного измерения'),
+            html.Table([
+              html.Tr([
+                html.Td([
+                  html.Button("Обновить", id='refresh-result-list')
+                ], colSpan=2, style={'textAlign':'right'})
+              ]),
+              html.Tr([
+                html.Td([html.Label("Выберите измерение:", style={'display':'inline-block', 'width':'100%'})], style={'width':'30%'}),
+                html.Td([dcc.Dropdown(id='select-disp-meas', options=[], style={'display':'inline-block', 'width':'100%'}, multi=False, clearable=False)], style={'width':'69%'}),
+              ], style={'width':'100%'}),
+              html.Tr([
+                html.Td([html.Label("Выберите результат моделирования:", style={'display':'inline-block', 'width':'100%'})], style={'width':'30%'}),
+                html.Td([dcc.Dropdown(id='select-disp-direct', options=[], style={'display':'inline-block', 'width':'100%', 'height': '30px',}, multi=True, clearable=False)], style={'width':'69%', }),
+              ]),
+            ]),
+            dte.DataTable(
+              columns=[{'name':'ID', 'id':0, 'deletable':False},
+                    {'name':'PhaseFunction_descr', 'id':1, 'deletable':False},
+                    {'name':'Зенитный угол солнца', 'id':2, 'deletable':False},
+                    {'name':'Аэрозольная оптическая толща', 'id':3, 'deletable':False},
+                    {'name':'Альбедо поверхности', 'id':4, 'deletable':False},
+                  ],
+              data=[{}], # initialise the rows
+              row_selectable='multi',
+              filtering=False,
+              sorting=False,
+              editable=False,
+              id='result-table'
+            ),
+            html.Hr(),
+            html.Div(id='view-result'),
+            html.Button('Посмотреть', id='button-view-direct-calc'),
+          ]),
         ]),
     ]),
     html.Div(id='tabs-content'),
@@ -242,8 +281,8 @@ def add_measurements_to_db(n_clicks, list_of_contents, meas_date, meas_time, lis
     if (not meas_date  is None) and (not meas_time  is None):
       date = dt.strptime(meas_date, '%Y-%m-%d').date()
       time = dt.strptime(meas_time, "%H:%M:%S").time()
-      datetime = dt(date.year, date.month, date.day, time.hour, time.minute, time.second)
-      
+      datetime = dt.combine(date, time)#dt(date.year, date.month, date.day, time.hour, time.minute, time.second)
+      print(dt.combine(date, time))
       if list_of_contents is not None:
         data = parse_contents(list_of_contents, list_of_names, list_of_dates)
         
@@ -322,11 +361,13 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
     else:
       
       F=None
-      print(distrtype, type(distrtype))
+      
       if distrtype==1:
         F = PowerLaw(r0, r1, p1)
+        p2=p3=p4=p5=0.0
       elif distrtype==2:
         F = LogNormal(r0, r1, p1, p2)
+        p3=p4=p5=0.0
       elif distrtype==5:
         F = LogNormal2(r0, r1, p1, p2, p3, p4, p5)
       
@@ -345,7 +386,68 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       item = PhaseFunction.create(R0=r0, R1=r1, Mre=mre, Mim=mim, particlesType=modeltype, 
         Wl=wavelen, distrType=distrtype, p1=p1, p2=p2, p3=p3, p4=p4, p5=p5, matrix=filepath)
       item.save()
-      return html.P("Запись о фазофой функции успешно добавлена в базу данных")
+      I = np.polynomial.legendre.legval(xi, EvA[:,0])
+      Q = np.polynomial.legendre.legval(xi, EvA[:,1])
+      return [
+        html.P("Запись о фазофой функции успешно добавлена в базу данных"),
+        html.Div([
+          dcc.Graph(id='phase-function-i',
+            figure={
+              'data': [
+                go.Scatter(
+                  x=xi,
+                  y=I,
+                )
+              ],
+              'layout': go.Layout(
+                xaxis={'title':'cos(theta)'},
+                yaxis={'type':'log', 'title':'I-Intensity'},
+                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                legend={'x': 0, 'y': 1},
+                hovermode='closest'
+              )
+            }
+          )
+        ], style={'width':'32%', 'display':'inline-block'}),
+        html.Div([
+          dcc.Graph(id='phase-function-q',
+            figure={
+              'data': [
+                go.Scatter(
+                  x=xi,
+                  y=Q,
+                )
+              ],
+              'layout': go.Layout(
+                xaxis={'title':'cos(theta)'},
+                yaxis={'title':'Q-Intensity'},
+                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                legend={'x': 0, 'y': 1},
+                hovermode='closest'
+              )
+            }
+          )
+        ], style={'width':'32%', 'display':'inline-block'}),
+        html.Div([
+          dcc.Graph(id='phase-function-Pol',
+            figure={
+              'data': [
+                go.Scatter(
+                  x=xi,
+                  y=-Q/I*100.0,
+                )
+              ],
+              'layout': go.Layout(
+                xaxis={'title':'cos(theta)'},
+                yaxis={'title':'DLP, %'},
+                margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+                legend={'x': 0, 'y': 1},
+                hovermode='closest'
+              )
+            }
+          )
+        ], style={'width':'32%', 'display':'inline-block'}),
+      ]
   pass
     
 
@@ -391,8 +493,8 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
   meas_id = int(meas_id)
   phase_id = int(phase_id)
   
-  meas_item = Measurements.select().where(Measurements.id==meas_id).get()
-  phase_item = PhaseFunction.select().where(PhaseFunction.id==phase_id).get()
+  meas_item = Measurements.get(Measurements.id==meas_id)
+  phase_item = PhaseFunction.get(PhaseFunction.id==phase_id)
   
   #проверяем, были ли такие расчеты
   query = (DirectParameters.select().where((DirectParameters.measType==meas_item)&
@@ -426,15 +528,162 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
   rt3app.run()
   rt3app.I/=transmittance
   rt3app.Q/=transmittance
-  np.savez('result.npz', Ang=rt3app.mu, I=rt3app.I, Q=rt3app.Q)
-  tmpF=open('result.npz', 'rb')
+  
+  datetime = dt.now()
+  timepath="%04d-%02d-%02d/%02d_%02d_%02d"%(datetime.year, datetime.month, 
+    datetime.day, datetime.hour, datetime.minute, datetime.second)
+  filepath = os.path.join(DIRECT_PARAMS, timepath)
+  os.makedirs(filepath, exist_ok=True)
+  filepath = os.path.join(filepath, 'result.npz')
+  np.savez(filepath, Ang=rt3app.mu, I=rt3app.I, Q=rt3app.Q)
     
   direct_item = DirectParameters(measType=meas_item, phaseFunction=phase_id, zenithAngle=zenAng,
-    aerosolOpticalDepth=aerDepth, groundAlbedo=grdAlb)
+    aerosolOpticalDepth=aerDepth, groundAlbedo=grdAlb, filepath=filepath)
   direct_item.save()
   print(meas_item, phase_id, zenAng, aerDepth, grdAlb)
 
 
+@app.callback(Output('select-disp-meas','options'),
+              [Input('refresh-result-list', 'n_clicks')],
+              )
+def update_select_disp_meas(n_clicks):
+  ret = []
+  if not (n_clicks  is None):
+    query=(Measurements.select())
+    for item in query:
+      ret.append({'label':item.datetime, 'value':item.id})
+  return ret
+  
+@app.callback(Output('result-table', 'data'),
+              [Input('select-disp-meas', 'value')]
+              )
+def update_select_table_direct(meas_pk):
+  ret = []
+  if not meas_pk is None:
+    meas_pk = int(meas_pk)
+    query=DirectParameters.select().join(PhaseFunction).where(DirectParameters.measType==meas_pk)
+    
+    if len(query)!=0:
+      for item in query:
+        ret.append({'0':str(item.id), '1':str(item.phaseFunction), 
+                    '2':item.zenithAngle,
+                    '3':item.aerosolOpticalDepth,
+                    '4':item.groundAlbedo})
+    
+  return ret
+
+
+@app.callback(Output('view-result', 'children'),
+              [Input('button-view-direct-calc', 'n_clicks')],
+              [State('result-table','selected_rows'),
+               State('select-disp-meas', 'value'),
+               State('result-table', 'data')])
+def polt_results(n_clicks, selected_rows, meas_id, data):
+  ret=[]
+  if (not (n_clicks is None)) and (len(selected_rows)>0):
+    meas_id = int(meas_id)
+    
+    q_meas = Measurements.get(Measurements.id==meas_id)
+    tmpret=[]
+    idxs=[]
+    for id in selected_rows:
+      idx = int(data[id]['0'])
+      print(idx)
+      item = DirectParameters.get(DirectParameters.id==idx)
+      F = np.load(item.filepath)
+      Ang = F['Ang'][:]
+      I = F['I'][:]
+      Q = F['Q'][:]
+      print(Ang)
+      F.close()
+      tmpret.append([Ang, I, Q, idx])
+      
+    meas_data = np.load(q_meas.filepath)['data'][:,:]
+    ret = [
+      html.Div([
+        dcc.Graph(id='ph-function-i',
+          figure={
+            'data': 
+              [go.Scatter(
+                x=np.rad2deg(np.arccos(it[0])),
+                y=it[1],
+                name=f'ID={it[3]}',
+              ) for it in tmpret]+
+              [go.Scatter(
+                x=meas_data[:,0],
+                y=meas_data[:,2],
+                mode = 'lines+markers',
+                name='measurements'
+              )]
+            ,
+            'layout': go.Layout(
+              xaxis={'title':'cos(theta)'},
+              yaxis={'type':'log', 'title':'I-Intensity'},
+              margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+              legend={'x': 0, 'y': 1},
+              hovermode='closest'
+            )
+          }
+        )
+      ], style={'width':'32%', 'display':'inline-block'}),
+      html.Div([
+        dcc.Graph(id='ph-function-q',
+          figure={
+            'data': [
+              go.Scatter(
+                x=np.rad2deg(np.arccos(it[0])),
+                y=it[2],
+                name=f'ID={it[3]}',
+              ) for it in tmpret]+
+              [go.Scatter(
+                x=meas_data[:,0],
+                y=meas_data[:,1],
+                mode = 'lines+markers',
+                name='measurements'
+              )]
+            ,
+            'layout': go.Layout(
+              xaxis={'title':'cos(theta)'},
+              yaxis={'title':'Q-Intensity'},
+              margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+              legend={'x': 0, 'y': 1},
+              hovermode='closest'
+            )
+          }
+        )
+      ], style={'width':'32%', 'display':'inline-block'}),
+      html.Div([
+        dcc.Graph(id='ph-function-Pol',
+          figure={
+            'data': 
+              [go.Scatter(
+                x=np.rad2deg(np.arccos(it[0])),
+                y=-it[2]/it[1]*100,
+                name=f'ID={it[3]}',
+              ) for it in tmpret]+
+              [go.Scatter(
+                x=meas_data[:,0],
+                y=-meas_data[:,1]/meas_data[:,2]*100,
+                mode = 'lines+markers',
+                name='measurements'
+              )]
+            ,
+            'layout': go.Layout(
+              xaxis={'title':'cos(theta)'},
+              yaxis={'title':'DLP, %'},
+              margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+              legend={'x': 0, 'y': 1},
+              hovermode='closest'
+            )
+          }
+        )
+      ], style={'width':'32%', 'display':'inline-block'}),
+    ]
+ 
+  return ret
+
+server=app.run_server
+initialize()
 if __name__ == '__main__':
-  initialize()
-  app.run_server(debug=True)
+  #initialize()
+  server(debug=True)

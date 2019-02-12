@@ -44,7 +44,6 @@ class PhaseFunction(Model):
   
   def __str__(self):
     name=None
-    print(type(self.distrType))
     for it in self.DISTRS:
       if it[0]==self.distrType:
         name=it[1]
@@ -65,7 +64,7 @@ class DirectParameters(Model):
   zenithAngle = DoubleField(default=65.0)
   aerosolOpticalDepth = DoubleField(default=0.01)
   groundAlbedo = DoubleField(default=0.06)
-  
+  filepath = TextField()
   class Meta:
     database = db_proxy
     indexes = (
