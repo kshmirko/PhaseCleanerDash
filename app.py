@@ -404,8 +404,8 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
                 )
               ],
               'layout': go.Layout(
-                xaxis={'title':'cos(theta)'},
-                yaxis={'type':'log', 'title':'I-Intensity'},
+                xaxis={'title':'μ'},
+                yaxis={'type':'log', 'title':'I-Интенсивность (Вт/(м2*ср*мкм))'},
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
                 hovermode='closest'
@@ -423,8 +423,8 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
                 )
               ],
               'layout': go.Layout(
-                xaxis={'title':'cos(theta)'},
-                yaxis={'title':'Q-Intensity'},
+                xaxis={'title':'μ'},
+                yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'},
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
                 hovermode='closest'
@@ -442,8 +442,8 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
                 )
               ],
               'layout': go.Layout(
-                xaxis={'title':'cos(theta)'},
-                yaxis={'title':'DLP, %'},
+                xaxis={'title':'μ'},
+                yaxis={'title':'Степень линейной поляризации, %'},
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
                 hovermode='closest'
@@ -563,8 +563,8 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
             )]
           ,
           'layout': go.Layout(
-            xaxis={'title':'cos(theta)'},
-            yaxis={'type':'log', 'title':'I-Intensity'},
+            xaxis={'title':'Угол рассеяния (град.)'},
+            yaxis={'type':'log', 'title':'I-Интенсивность (Вт/(м2*ср*мкм))'},
             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             legend={'x': 0, 'y': 1},
             hovermode='closest'
@@ -589,8 +589,8 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
             )]
           ,
           'layout': go.Layout(
-            xaxis={'title':'cos(theta)'},
-            yaxis={'title':'Q-Intensity'},
+            xaxis={'title':'Угол рассеяния (град.)'},
+            yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'},
             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             legend={'x': 0, 'y': 1},
             hovermode='closest'
@@ -615,8 +615,8 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
             )]
           ,
           'layout': go.Layout(
-            xaxis={'title':'cos(theta)'},
-            yaxis={'title':'DLP, %'},
+            xaxis={'title':'Угол рассеяния (град.)'},
+            yaxis={'title':'Степень линейной поляризации, %'},
             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             legend={'x': 0, 'y': 1},
             hovermode='closest'
@@ -702,8 +702,8 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
               )]
             ,
             'layout': go.Layout(
-              xaxis={'title':'cos(theta)'},
-              yaxis={'type':'log', 'title':'I-Intensity'},
+              xaxis={'title':'Угол рассеяния (град.)'},
+              yaxis={'type':'log', 'title':'I-Интенсивность (Вт/(м2*ср*мкм))'},
               margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
@@ -728,8 +728,8 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
               )]
             ,
             'layout': go.Layout(
-              xaxis={'title':'cos(theta)'},
-              yaxis={'title':'Q-Intensity'},
+              xaxis={'title':'Угол рассеяния (град.)'},
+              yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'},
               margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
@@ -754,8 +754,8 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
               )]
             ,
             'layout': go.Layout(
-              xaxis={'title':'cos(theta)'},
-              yaxis={'title':'DLP, %'},
+              xaxis={'title':'Угол рассеяния (град.)'},
+              yaxis={'title':'Степень линейной поляризации, %'},
               margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
