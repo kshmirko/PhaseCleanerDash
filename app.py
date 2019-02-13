@@ -179,7 +179,7 @@ app.layout = html.Div([
                 html.Div(children=[
                   html.Label(["P",html.Sub("5"),":"], style={'display':'inline-block', 'width':'100pt'}),
                   dcc.Input(id="phase-p5", type="number", debounce=True, style={'display':'inline'}, 
-                    value=0.99, min=0.01, max=0.99, step=0.01),
+                    value=0.99, min=0.0001, max=0.9999, step=0.0001),
                 ]),
             ]),
             html.Hr(),
