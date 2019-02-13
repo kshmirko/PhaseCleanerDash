@@ -4,6 +4,7 @@ import dash_html_components as html
 import dash_core_components as dcc
 from datetime import datetime as dt
 from datetime import date as dtt
+import dash_auth
 #import dash_bootstrap_components as dbc
 #import dash_table_experiments as dte
 import dash_table as dte
@@ -20,6 +21,11 @@ import numpy as np
 from model import db_proxy, initialize, Measurements, PhaseFunction, DirectParameters
 import plotly.graph_objs as go
 
+VALID_USERNAME_PASSWORD_PAIRS = [
+  ['kshmirko','2332361'],
+  ['anpavlov', '123123'],
+]
+
 UPLOAD_TO = 'measurements/'
 UPLOAD_PHASES = 'phases/'
 DIRECT_PARAMS = 'direct_params/'
@@ -31,6 +37,10 @@ flaskapp = Flask(__name__)
 wsgi_app = flaskapp.wsgi_app
 
 app = dash.Dash(__name__, server=flaskapp, url_base_pathname='/', external_stylesheets=external_stylesheets)
+auth = dash_auth.BasicAuth(
+    app,
+    VALID_USERNAME_PASSWORD_PAIRS
+)
 
 app.title = APP_NAME
 
