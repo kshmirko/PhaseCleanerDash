@@ -59,7 +59,7 @@ app.layout = html.Div([
                     html.Div([
                         dcc.Input(
                             id='measurement-time',
-                            type='time',
+                            type='text',
                             placeholder='HH:MM:SS',
                         )],style={'display': 'inline-block'})
                 ]),
