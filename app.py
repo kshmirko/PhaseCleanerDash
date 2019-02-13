@@ -205,7 +205,7 @@ app.layout = html.Div([
               ]),
               html.Tr([
                 html.Td([html.Label("Зенитный угол:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='zenithAngle', type='number', style={'display':'inline-block'}, value=65.0, min=0, max=70, step=0.5)]),
+                html.Td([dcc.Input(id='zenithAngle', type='number', style={'display':'inline-block'}, value=65.0, min=0, max=75, step=0.5)]),
               ]),
               html.Tr([
                 html.Td([html.Label("Аэрозольная отпическая толща:", style={'display':'inline-block'})]),
