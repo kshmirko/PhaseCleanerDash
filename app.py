@@ -752,7 +752,7 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
             ,
             'layout': go.Layout(
               xaxis={'title':'Угол рассеяния (град.)'},
-              yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'+("&#10;&#13;&nbsp;1")*4},
+              yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'},
               margin={'l': 40, 'b': 40, 't': 40, 'r': 40},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
