@@ -1,3 +1,4 @@
+#-*- encoding: utf-8 -*-
 import dash
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
@@ -21,6 +22,8 @@ import numpy as np
 from model import db_proxy, initialize, Measurements, PhaseFunction, DirectParameters
 import plotly.graph_objs as go
 
+
+ 
 VALID_USERNAME_PASSWORD_PAIRS = [
   ['kshmirko','2332361'],
   ['anpavlov', '123123'],
@@ -30,7 +33,10 @@ UPLOAD_TO = 'measurements/'
 UPLOAD_PHASES = 'phases/'
 DIRECT_PARAMS = 'direct_params/'
 APP_NAME = 'Phase Clener'
+
+
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
 from flask import Flask
 flaskapp = Flask(__name__)
 
@@ -163,7 +169,7 @@ app.layout = html.Div([
                   ], value='1'),
                 ], colSpan='3'),
               ]),
-            ]),
+            ], style={'width':'100%'}),
             html.Br(),
             html.Div(id='params', children=[
               html.Div(children=[
@@ -202,30 +208,30 @@ app.layout = html.Div([
             html.H3('Настройка прямого моделирования'),
             html.Table([
               html.Tr([
-                html.Td([html.Label("Обновить поля", style={'display':'inline-block'})]),
-                html.Td([html.Button("Обновить", id='update-fields')])
+                html.Td([html.Label("Обновить поля", style={'display':'inline-block'})], style={'width':'30%'}),
+                html.Td([html.Button("Обновить", id='update-fields')], style={'width':'70%'})
+              ], ),
+              html.Tr([
+                html.Td([html.Label("Измерение", style={'display':'inline-block'})], style={'width':'30%'}),
+                html.Td([dcc.Dropdown(id='select-meas', options=[], style={'display':'inline-block', 'width':'100%'})], style={'width':'70%'})
               ]),
               html.Tr([
-                html.Td([html.Label("Измерение", style={'display':'inline-block'})]),
-                html.Td([dcc.Dropdown(id='select-meas', options=[], style={'width':'500pt'})])
+                html.Td([html.Label('Фазовая функция', style={'display':'inline-block'})], style={'width':'30%'}),
+                html.Td([dcc.Dropdown(id='select-phase', options=[], style={'display':'inline-block', 'width':'100%'})], style={'width':'70%'})
               ]),
               html.Tr([
-                html.Td([html.Label('Фазовая функция', style={'display':'inline-block'})]),
-                html.Td([dcc.Dropdown(id='select-phase', options=[], )])
+                html.Td([html.Label("Зенитный угол:", style={'display':'inline-block'})], style={'width':'30%'}),
+                html.Td([dcc.Input(id='zenithAngle', type='number', style={'display':'inline-block', 'width':'100%'}, value=65.0, min=0, max=75, step=0.5)], style={'width':'70%'}),
               ]),
               html.Tr([
-                html.Td([html.Label("Зенитный угол:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='zenithAngle', type='number', style={'display':'inline-block'}, value=65.0, min=0, max=75, step=0.5)]),
+                html.Td([html.Label("Аэрозольная отпическая толща:", style={'display':'inline-block'})], style={'width':'30%'}),
+                html.Td([dcc.Input(id='aerosolOpticalDepth', type='number', style={'display':'inline-block', 'width':'100%'}, value=0.1, min=0.0, max=2.0, step=0.005)], style={'width':'70%'}),
               ]),
               html.Tr([
-                html.Td([html.Label("Аэрозольная отпическая толща:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='aerosolOpticalDepth', type='number', style={'display':'inline-block'}, value=0.1, min=0.0, max=2.0, step=0.005)]),
+                html.Td([html.Label("Альбедо подстилающей поверхности:", style={'display':'inline-block'})], style={'width':'30%'}),
+                html.Td([dcc.Input(id='groundAlbedo', type='number', style={'display':'inline-block', 'width':'100%'}, value=0.06, min=0.0, max=1.0, step=0.01)], style={'width':'70%'}),
               ]),
-              html.Tr([
-                html.Td([html.Label("Альбедо подстилающей поверхности:", style={'display':'inline-block'})]),
-                html.Td([dcc.Input(id='groundAlbedo', type='number', style={'display':'inline-block'}, value=0.06, min=0.0, max=1.0, step=0.01)]),
-              ]),
-            ])
+            ], style={'width':'100%'})
           ]),
           html.Hr(),
           html.Div(id='direct-result'),
@@ -248,7 +254,7 @@ app.layout = html.Div([
                 html.Td([html.Label("Выберите результат моделирования:", style={'display':'inline-block', 'width':'100%'})], style={'width':'30%'}),
                 html.Td([dcc.Dropdown(id='select-disp-direct', options=[], style={'display':'inline-block', 'width':'100%', 'height': '30px',}, multi=True, clearable=False)], style={'width':'69%', }),
               ]),
-            ]),
+            ], style={'width':'100%'}),
             dte.DataTable(
               columns=[{'name':'ID', 'id':0, 'deletable':False},
                     {'name':'PhaseFunction_descr', 'id':1, 'deletable':False},
@@ -388,11 +394,15 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       elif distrtype==5:
         F = LogNormal2(r0, r1, p1, p2, p3, p4, p5)
       
-      midx = complex(mre, -mim)
-      xi, _ = np.polynomial.legendre.leggauss(MAX_DEG)
-      EvA, _, _, _, ssa = CalcScatteringProps1(F, wavelen, midx, xi, MAX_LEG)
-      EvA = EvA / EvA[0,0]
-      
+      if modeltype==0:
+        #чферические частицы
+        midx = complex(mre, -mim)
+        xi, _ = np.polynomial.legendre.leggauss(MAX_DEG)
+        EvA, _, _, _, ssa = CalcScatteringProps1(F, wavelen, midx, xi, MAX_LEG)
+        EvA = EvA / EvA[0,0]
+      elif modeltype==1:
+        # агломераты
+        pass
       dtnow = dt.now()
       timepath="%04d-%02d-%02d/%02d_%02d"%(dtnow.year, dtnow.month, dtnow.day, dtnow.hour, dtnow.minute)
       filepath = os.path.join(UPLOAD_PHASES, timepath)
@@ -717,7 +727,7 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
             'layout': go.Layout(
               xaxis={'title':'Угол рассеяния (град.)'},
               yaxis={'type':'log', 'title':'I-Интенсивность (Вт/(м2*ср*мкм))'},
-              margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+              margin={'l': 40, 'b': 40, 't': 40, 'r': 40},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
             )
@@ -742,8 +752,8 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
             ,
             'layout': go.Layout(
               xaxis={'title':'Угол рассеяния (град.)'},
-              yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'},
-              margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+              yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'+("&#10;&#13;&nbsp;1")*4},
+              margin={'l': 40, 'b': 40, 't': 40, 'r': 40},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
             )
@@ -769,7 +779,7 @@ def polt_results(n_clicks, selected_rows, meas_id, data):
             'layout': go.Layout(
               xaxis={'title':'Угол рассеяния (град.)'},
               yaxis={'title':'Степень линейной поляризации, %'},
-              margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+              margin={'l': 40, 'b': 40, 't': 40, 'r': 40},
               legend={'x': 0, 'y': 1},
               hovermode='closest'
             )
