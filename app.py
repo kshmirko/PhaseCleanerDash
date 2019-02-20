@@ -55,6 +55,7 @@ app.layout = html.Div([
         dcc.Tab(label='1. Загрузка данных измерений на сервер', value='tab-meas', children=[
             html.Div([
                 html.H3('Загрузка данных измерений'),
+                html.P("Для загрузки данных измерений на сарвер необходимо подготовить текстовый файл, состоящий из 3 колонок. Первая колонка содержит угол относительно солнца в плоскости солнечного вертикала, вторая колонка - интенсивность поляризованной компоненты при данном угле, третья колонка - интенсивность неполяризованного излучения при данном угле. Компоненты интенсивности должны быть нормированы на освещенность на нижней границе атмосферы."),
                 html.Div([
                     html.Div([
                         html.Label('Дата измерений: '),
@@ -106,6 +107,7 @@ app.layout = html.Div([
         dcc.Tab(label='2. Создание фазовой функции', value='tab-phase', children=[
           html.Div([
             html.H3("Выберите параметры фазовой функции"),
+            html.P('Моделируем матрицу рассеяния распределения частиц по размерам. Имеются три возможных распределения: степенное, логнормальное и бимодальное логнормальное. Каждое распределение характеризуется своим набором параметров. Для степенного P1=показатель степени; для логнормального P1=модальный радиус, P2=полуширина распределения; для бимодального  - P1=модальный радиус 1 моды, P2=полуширина распределения 1 моды; P3=модальный радиус 2 моды, P4=полуширина распределения 2 моды; P5=доля первой моды в концентрации частиц (N1/Ntot).'),
             html.Table([
               html.Tr([
                 html.Td([
@@ -206,6 +208,7 @@ app.layout = html.Div([
         dcc.Tab(label='3. Выполнение расчетов прямого моделирования', value='tab-direct-calc', children=[
           html.Div([
             html.H3('Настройка прямого моделирования'),
+            html.P("Здесь осуществляется настройка модели. Перед настройкой нажмите кнопку 'Обновить', для актуализации перечня данных измерений и фазовых функций"),
             html.Table([
               html.Tr([
                 html.Td([html.Label("Обновить поля", style={'display':'inline-block'})], style={'width':'30%'}),
@@ -240,6 +243,7 @@ app.layout = html.Div([
         dcc.Tab(label="4. Просмотр", value='tab-view-calc', children=[
           html.Div([
             html.H3('Просмотр результатов моделирования для выбранного натурного измерения'),
+            html.P("На этой кладке можно просмотреть все, что было моделировано для заданного натурного измерения. Для актуализации данных, нажмите кнопку 'Обновить' и выберите в ниспадающем списке дату измерения. Отметив в появившейся таблице галочкой нужные результаты расчета и нажав 'Посмотреть', получите искомые графики."),
             html.Table([
               html.Tr([
                 html.Td([
@@ -250,10 +254,10 @@ app.layout = html.Div([
                 html.Td([html.Label("Выберите измерение:", style={'display':'inline-block', 'width':'100%'})], style={'width':'30%'}),
                 html.Td([dcc.Dropdown(id='select-disp-meas', options=[], style={'display':'inline-block', 'width':'100%'}, multi=False, clearable=False)], style={'width':'69%'}),
               ], style={'width':'100%'}),
-              html.Tr([
-                html.Td([html.Label("Выберите результат моделирования:", style={'display':'inline-block', 'width':'100%'})], style={'width':'30%'}),
-                html.Td([dcc.Dropdown(id='select-disp-direct', options=[], style={'display':'inline-block', 'width':'100%', 'height': '30px',}, multi=True, clearable=False)], style={'width':'69%', }),
-              ]),
+              # html.Tr([
+#                 html.Td([html.Label("Выберите результат моделирования:", style={'display':'inline-block', 'width':'100%'})], style={'width':'30%'}),
+#                 html.Td([dcc.Dropdown(id='select-disp-direct', options=[], style={'display':'inline-block', 'width':'100%', 'height': '30px',}, multi=True, clearable=False)], style={'width':'69%', }),
+#               ]),
             ], style={'width':'100%'}),
             dte.DataTable(
               columns=[{'name':'ID', 'id':0, 'deletable':False},
@@ -334,14 +338,15 @@ def add_measurements_to_db(n_clicks, list_of_contents, meas_date, meas_time, lis
             ])
           item = Measurements(datetime=datetime, filepath=filepath)
           item.save()
+          ret = html.P(f"Данные измерений за {item.datetime} успешно внесены с БД")
         else:
           item = query.get()
           ret = html.P(f"Такие данные уже есть в таблице {item.datetime}")
           
       else:
-        ret = html.Div("Файл не выбран")
+        ret = html.P("Файл не выбран")
     else: 
-      ret = html.Div("Поля 'Дата' или 'Время' содержат пустые значения")
+      ret = html.P("Поля 'Дата' или 'Время' содержат пустые значения")
     return ret
 
 
