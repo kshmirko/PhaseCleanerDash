@@ -22,6 +22,7 @@ import numpy as np
 from model import db_proxy, initialize, Measurements, PhaseFunction, DirectParameters
 import plotly.graph_objs as go
 import netCDF4 as nc
+from calc_module.agglomerates import CalcScatteringPropsAggl
 
 def find_nearest(array, value):
     array = np.asarray(array)
@@ -382,6 +383,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
   
   if n_clicks!=None:
     query = []
+    #print(len(query))
     if distrtype==1:
       query = (PhaseFunction.select().where((PhaseFunction.R0==r0)&
                                           (PhaseFunction.R1==r1)&
@@ -415,12 +417,13 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
                                           (PhaseFunction.p4==p4)&
                                           (PhaseFunction.p5==p5)))
                                           
+    #print(len(query))
     if len(query)!=0:
       return html.P("В базе данный уже есть запись с такими параметрами")
     else:
-      
+      ret=[]
       F=None
-      
+      xi, _ = np.polynomial.legendre.leggauss(MAX_DEG)
       if distrtype==1:
         F = PowerLaw(r0, r1, p1)
         p2=p3=p4=p5=0.0
@@ -433,7 +436,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       if modeltype==1:
         #чферические частицы
         midx = complex(mre, -mim)
-        xi, _ = np.polynomial.legendre.leggauss(MAX_DEG)
+        
         EvA, _, _, _, ssa = CalcScatteringProps1(F, wavelen, midx, xi, MAX_LEG)
         EvA = EvA / EvA[0,0]
       elif modeltype==2:
@@ -442,10 +445,19 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
         mim = find_nearest(MIM_RANGE, mim)
         midx = complex(mre, mim)
         filepath_tmp = os.path.join(PARTICLES_PATH, FILE_FORMAT%(mre, mim))
-        #F = nc.Div
-        print(filepath_tmp)
-        return html.P(f"Using particle with refractive index{midx}")
-        pass
+        File = nc.Dataset(filepath_tmp, 'r')
+        mu = np.cos(np.deg2rad(File['Theta'][...]))
+        Mueller = File['Mueller'][...]
+        Csca = File['Csca'][...]
+        X = File['X'][...]
+        Cext = File['Cext'][...]
+        
+        File.close()
+        
+        EvA, ssa = CalcScatteringPropsAggl(F, wavelen, X, mu, Csca, Cext, Mueller, MAX_LEG)
+        EvA = EvA / EvA[0,0]
+        ret.append(html.P(f"Using particle with refractive index{midx}"))
+        
       dtnow = dt.now()
       timepath="%04d-%02d-%02d/%02d_%02d"%(dtnow.year, dtnow.month, dtnow.day, dtnow.hour, dtnow.minute)
       filepath = os.path.join(UPLOAD_PHASES, timepath)
@@ -458,7 +470,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       item.save()
       I = np.polynomial.legendre.legval(xi, EvA[:,0])
       Q = np.polynomial.legendre.legval(xi, EvA[:,1])
-      return [
+      ret+=[
         html.P("Запись о фазофой функции успешно добавлена в базу данных"),
         html.Div([
           dcc.Graph(id='phase-function-i',
@@ -518,7 +530,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
           )
         ], style={'width':'32%', 'display':'inline-block'}),
       ]
-  pass
+      return ret
     
 
 @app.callback(Output('select-meas','options'),
