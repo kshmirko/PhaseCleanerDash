@@ -21,8 +21,12 @@ import io
 import numpy as np
 from model import db_proxy, initialize, Measurements, PhaseFunction, DirectParameters
 import plotly.graph_objs as go
+import netCDF4 as nc
 
-
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
  
 VALID_USERNAME_PASSWORD_PAIRS = [
   ['kshmirko','2332361'],
@@ -33,7 +37,11 @@ UPLOAD_TO = 'measurements/'
 UPLOAD_PHASES = 'phases/'
 DIRECT_PARAMS = 'direct_params/'
 APP_NAME = 'Phase Clener'
+PARTICLES_PATH='PARTICLES/'
 
+MRE_RANGE = (1.35, 1.40, 1.45, 1.50, 1.55, 1.60)
+MIM_RANGE = (0.0, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030,)
+FILE_FORMAT = "addadb_m1=%5.3f+%5.3f_m2=1.000+0.000_scale=1-avg.nc"
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -371,8 +379,30 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
   # преобразуем строки в цклые числа
   distrtype=int(distrtype)
   modeltype=int(modeltype)
+  
   if n_clicks!=None:
-    query = (PhaseFunction.select().where((PhaseFunction.R0==r0)&
+    query = []
+    if distrtype==1:
+      query = (PhaseFunction.select().where((PhaseFunction.R0==r0)&
+                                          (PhaseFunction.R1==r1)&
+                                          (PhaseFunction.Mre==mre)&
+                                          (PhaseFunction.Mim==mim)&
+                                          (PhaseFunction.particlesType==modeltype)&
+                                          (PhaseFunction.Wl==wavelen)&
+                                          (PhaseFunction.distrType==distrtype)&
+                                          (PhaseFunction.p1==p1)))
+    elif distrtype==2:
+      query = (PhaseFunction.select().where((PhaseFunction.R0==r0)&
+                                          (PhaseFunction.R1==r1)&
+                                          (PhaseFunction.Mre==mre)&
+                                          (PhaseFunction.Mim==mim)&
+                                          (PhaseFunction.particlesType==modeltype)&
+                                          (PhaseFunction.Wl==wavelen)&
+                                          (PhaseFunction.distrType==distrtype)&
+                                          (PhaseFunction.p1==p1)&
+                                          (PhaseFunction.p2==p2)))
+    elif distrtype==5:
+      query = (PhaseFunction.select().where((PhaseFunction.R0==r0)&
                                           (PhaseFunction.R1==r1)&
                                           (PhaseFunction.Mre==mre)&
                                           (PhaseFunction.Mim==mim)&
@@ -384,6 +414,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
                                           (PhaseFunction.p3==p3)&
                                           (PhaseFunction.p4==p4)&
                                           (PhaseFunction.p5==p5)))
+                                          
     if len(query)!=0:
       return html.P("В базе данный уже есть запись с такими параметрами")
     else:
@@ -398,15 +429,22 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
         p3=p4=p5=0.0
       elif distrtype==5:
         F = LogNormal2(r0, r1, p1, p2, p3, p4, p5)
-      
-      if modeltype==0:
+      print(modeltype, type(modeltype))
+      if modeltype==1:
         #чферические частицы
         midx = complex(mre, -mim)
         xi, _ = np.polynomial.legendre.leggauss(MAX_DEG)
         EvA, _, _, _, ssa = CalcScatteringProps1(F, wavelen, midx, xi, MAX_LEG)
         EvA = EvA / EvA[0,0]
-      elif modeltype==1:
+      elif modeltype==2:
         # агломераты
+        mre = find_nearest(MRE_RANGE, mre)
+        mim = find_nearest(MIM_RANGE, mim)
+        midx = complex(mre, mim)
+        filepath_tmp = os.path.join(PARTICLES_PATH, FILE_FORMAT%(mre, mim))
+        #F = nc.Div
+        print(filepath_tmp)
+        return html.P(f"Using particle with refractive index{midx}")
         pass
       dtnow = dt.now()
       timepath="%04d-%02d-%02d/%02d_%02d"%(dtnow.year, dtnow.month, dtnow.day, dtnow.hour, dtnow.minute)
