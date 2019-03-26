@@ -53,9 +53,9 @@ class PhaseFunction(Model):
       if it[0]==self.particlesType:
         modelname=it[1]
     
-    return f"<Распред:{name}, Модель:{modelname}, "+\
-           f"params=({self.p1},{self.p2},{self.p3},{self.p4},{self.p5}),"+\
-           f"midx=({self.Mre}, {self.Mim}), R=[{self.R0},{self.R1}], Wl={self.Wl}]>"
+    return f"<Распред:{name}, Модель:{modelname}, \n"+\
+           f"\tparams=({self.p1},{self.p2},{self.p3},{self.p4},{self.p5}),\n"+\
+           f"\tmidx=({self.Mre}, {self.Mim}), R=[{self.R0},{self.R1}], Wl={self.Wl}]>"
     
 class DirectParameters(Model):
   id = AutoField()

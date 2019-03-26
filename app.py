@@ -185,34 +185,34 @@ app.layout = html.Div([
             html.Br(),
             html.Div(id='params', children=[
               html.Div(children=[
-                html.Label(["P",html.Sub("1"),":"], style={'display':'inline-block', 'width':'100pt'}),
-                dcc.Input(id="phase-p1", type="number", debounce=True, style={'display':'inline'}, 
+                html.Label(["P",html.Sub("1"),":"], style={'display':'inline-block', 'width':'10%'}),
+                dcc.Input(id="phase-p1", type="number", debounce=True, style={'display':'inline-block','width':'90%'}, 
                   value=-4, min=-10, max=10, step=0.1),
                 ]),
                 html.Div(children=[
-                  html.Label(["P",html.Sub("2"),":"], style={'display':'inline-block', 'width':'100pt'}),
-                  dcc.Input(id="phase-p2", type="number", debounce=True, style={'display':'inline'}, 
+                  html.Label(["P",html.Sub("2"),":"], style={'display':'inline-block', 'width':'10%'}),
+                  dcc.Input(id="phase-p2", type="number", debounce=True, style={'display':'inline-block','width':'90%'}, 
                     value=2.0, min=1.1, max=2.8, step=0.1),
                 ]),
                 html.Div(children=[
-                  html.Label(["P",html.Sub("3"),":"], style={'display':'inline-block', 'width':'100pt'}),
-                  dcc.Input(id="phase-p3", type="number", debounce=True, style={'display':'inline'}, 
+                  html.Label(["P",html.Sub("3"),":"], style={'display':'inline-block', 'width':'10%'}),
+                  dcc.Input(id="phase-p3", type="number", debounce=True, style={'display':'inline-block','width':'90%'}, 
                     value=0.8, min=0.31, max=2.0, step=0.1),
                 ]),
                 html.Div(children=[
-                  html.Label(["P",html.Sub("4"),":"], style={'display':'inline-block', 'width':'100pt'}),
-                  dcc.Input(id="phase-p4", type="number", debounce=True, style={'display':'inline'}, 
+                  html.Label(["P",html.Sub("4"),":"], style={'display':'inline-block', 'width':'10%'}),
+                  dcc.Input(id="phase-p4", type="number", debounce=True, style={'display':'inline-block','width':'90%'}, 
                     value=2.1, min=1.1, max=2.8, step=0.1),
                 ]),
                 html.Div(children=[
-                  html.Label(["P",html.Sub("5"),":"], style={'display':'inline-block', 'width':'100pt'}),
-                  dcc.Input(id="phase-p5", type="number", debounce=True, style={'display':'inline'}, 
+                  html.Label(["P",html.Sub("5"),":"], style={'display':'inline-block', 'width':'10%'}),
+                  dcc.Input(id="phase-p5", type="number", debounce=True, style={'display':'inline-block','width':'90%'}, 
                     value=0.99, min=0.0001, max=0.9999, step=0.0001),
                 ]),
             ]),
             html.Hr(),
-            html.Div(id='phase-result'),
             html.Button('Рассчитать', id='button-calc-phase', style={'class':'btn btn-primary'}),
+            html.Div(id='phase-result'),
           ]),
         ]),
         dcc.Tab(label='3. Выполнение расчетов прямого моделирования', value='tab-direct-calc', children=[
@@ -247,8 +247,8 @@ app.layout = html.Div([
             ], style={'width':'100%'})
           ]),
           html.Hr(),
-          html.Div(id='direct-result'),
           html.Button('Рассчитать', id='button-calc-direct'),
+          html.Div(id='direct-result'),
         ]),
         dcc.Tab(label="4. Просмотр", value='tab-view-calc', children=[
           html.Div([
@@ -269,20 +269,21 @@ app.layout = html.Div([
 #                 html.Td([dcc.Dropdown(id='select-disp-direct', options=[], style={'display':'inline-block', 'width':'100%', 'height': '30px',}, multi=True, clearable=False)], style={'width':'69%', }),
 #               ]),
             ], style={'width':'100%'}),
-            dte.DataTable(
-              columns=[{'name':'ID', 'id':0, 'deletable':False},
-                    {'name':'PhaseFunction_descr', 'id':1, 'deletable':False},
-                    {'name':'Зенитный угол солнца', 'id':2, 'deletable':False},
-                    {'name':'Аэрозольная оптическая толща', 'id':3, 'deletable':False},
-                    {'name':'Альбедо поверхности', 'id':4, 'deletable':False},
-                  ],
-              data=[{}], # initialise the rows
-              row_selectable='multi',
-              filtering=False,
-              sorting=False,
-              editable=False,
-              id='result-table'
-            ),
+            html.Div([
+              dte.DataTable(
+                columns=[{'name':'ID', 'id':0, 'deletable':False},
+                      {'name':'PhaseFunction_descr', 'id':1, 'deletable':False},
+                      {'name':'Зенитный угол солнца', 'id':2, 'deletable':False},
+                      {'name':'Аэрозольная оптическая толща', 'id':3, 'deletable':False},
+                      {'name':'Альбедо поверхности', 'id':4, 'deletable':False},
+                    ],
+                data=[{}], # initialise the rows
+                row_selectable='multi',
+                filtering=False,
+                sorting=False,
+                editable=False,
+                id='result-table',
+              )], style={"width":"100%"},),
             html.Hr(),
             html.Div(id='view-result'),
             html.Button('Посмотреть', id='button-view-direct-calc'),
@@ -425,6 +426,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       ret=[]
       F=None
       xi, _ = np.polynomial.legendre.leggauss(MAX_DEG)
+      xi_deg = np.rad2deg(np.arccos(xi))
       if distrtype==1:
         F = PowerLaw(r0, r1, p1)
         p2=p3=p4=p5=0.0
@@ -434,6 +436,7 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       elif distrtype==5:
         F = LogNormal2(r0, r1, p1, p2, p3, p4, p5)
       print(modeltype, type(modeltype))
+      
       if modeltype==1:
         #чферические частицы
         midx = complex(mre, -mim)
@@ -471,6 +474,17 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
       item.save()
       I = np.polynomial.legendre.legval(xi, EvA[:,0])
       Q = np.polynomial.legendre.legval(xi, EvA[:,1])
+      
+      tbl = []
+      for i, v in enumerate(xi):
+        tbl.append(
+          html.Tr([
+            html.Td(xi_deg[i]),
+            html.Td(I[i]),
+            html.Td(Q[i]),
+          ])
+        )
+      
       ret+=[
         html.P("Запись о фазофой функции успешно добавлена в базу данных"),
         html.Div([
@@ -478,12 +492,12 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
             figure={
               'data': [
                 go.Scatter(
-                  x=xi,
+                  x=xi_deg,
                   y=I,
                 )
               ],
               'layout': go.Layout(
-                xaxis={'title':'μ'},
+                xaxis={'title':'Угол рассеяния (град.)'},
                 yaxis={'type':'log', 'title':'I-Интенсивность (Вт/(м2*ср*мкм))'},
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
@@ -497,12 +511,12 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
             figure={
               'data': [
                 go.Scatter(
-                  x=xi,
+                  x=xi_deg,
                   y=Q,
                 )
               ],
               'layout': go.Layout(
-                xaxis={'title':'μ'},
+                xaxis={'title':'Угол рассеяния (град.)'},
                 yaxis={'title':'Q-Интенсивность (Вт/(м2*ср*мкм))'},
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
@@ -516,20 +530,28 @@ def submit_phase_function(n_clicks, r0, r1, mre, mim, modeltype, wavelen, distrt
             figure={
               'data': [
                 go.Scatter(
-                  x=xi,
+                  x=xi_deg,
                   y=-Q/I*100.0,
                 )
               ],
               'layout': go.Layout(
-                xaxis={'title':'μ'},
+                xaxis={'title':'Угол рассеяния (град.)'},
                 yaxis={'title':'Степень линейной поляризации, %'},
                 margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                 legend={'x': 0, 'y': 1},
                 hovermode='closest'
               )
             }
-          )
+          ),
         ], style={'width':'32%', 'display':'inline-block'}),
+         html.Table([
+          html.Tr([
+            html.Td(["Угол рассеяния"]),
+            html.Td(["Ip"]),
+            html.Td(["Iq"]),
+          ]),
+          *tbl,
+        ]),
       ]
       return ret
     
@@ -624,6 +646,18 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
     aerosolOpticalDepth=aerDepth, groundAlbedo=grdAlb, filepath=filepath)
   direct_item.save()
   #print(meas_item, phase_id, zenAng, aerDepth, grdAlb)
+  tbl=[]
+  
+  for i,_ in enumerate(rt3app.mu):
+    tbl.append(
+      html.Tr([
+        html.Td([np.rad2deg(np.arccos(rt3app.mu[i]))]),
+        html.Td([rt3app.Q[i]]),
+        html.Td([rt3app.I[i]]),
+        html.Td([-rt3app.Q[i]/rt3app.I[i]]),
+      ])
+    )
+  
   ret = [
     html.Div([
       dcc.Graph(id='ph-fun-i',
@@ -703,6 +737,17 @@ def calc_direct(n_clicks, meas_id, phase_id, zenAng, aerDepth, grdAlb):
         }
       )
     ], style={'width':'32%', 'display':'inline-block'}),
+    html.Div([
+      html.Table([
+        html.Tr([
+          html.Td(["Угол рассеяния"]),
+          html.Td(["Iq"]),
+          html.Td(["Ip"]),
+          html.Td(["DLP"]),
+        ]),
+        *tbl,
+      ])
+    ])
   ]
   return ret
 
@@ -729,6 +774,7 @@ def update_select_table_direct(meas_pk):
     
     if len(query)!=0:
       for item in query:
+        #print(item.phaseFunction)
         ret.append({'0':str(item.id), '1':str(item.phaseFunction), 
                     '2':item.zenithAngle,
                     '3':item.aerosolOpticalDepth,
