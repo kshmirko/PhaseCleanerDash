@@ -51,7 +51,7 @@ flaskapp = Flask(__name__)
 
 wsgi_app = flaskapp.wsgi_app
 
-app = dash.Dash(__name__, server=flaskapp, url_base_pathname='/', external_stylesheets=external_stylesheets)
+app = dash.Dash(__name__, server=flaskapp, url_base_pathname='/dash/', external_stylesheets=external_stylesheets)
 auth = dash_auth.BasicAuth(
     app,
     VALID_USERNAME_PASSWORD_PAIRS
